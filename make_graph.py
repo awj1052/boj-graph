@@ -3,7 +3,7 @@ import json
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 
 def ensure_dir(path: str) -> None:
@@ -42,7 +42,7 @@ def read_status_jsonl(path: str) -> List[Dict]:
     return records
 
 
-def build_bins(records: List[Dict], minute_delta: int = 3) -> Tuple[Dict[datetime, Dict[str, int]], datetime, datetime]:
+def build_bins(records: List[Dict], minute_delta: int = 3, freeze_dt: Optional[datetime] = None) -> Tuple[Dict[datetime, Dict[str, int]], datetime, datetime]:
     binned = defaultdict(lambda: {'green': 0, 'red': 0, 'orange': 0, 'dark_grey': 0, 'blue': 0})
     times: List[datetime] = []
 
@@ -54,6 +54,9 @@ def build_bins(records: List[Dict], minute_delta: int = 3) -> Tuple[Dict[datetim
         times.append(dt)
         bin_key = dt.replace(minute=(dt.minute // minute_delta) * minute_delta, second=0, microsecond=0)
         cat = classify_result(str(rec.get('result', '')))
+        # 프리즈타임 이후의 맞았습니다!!는 blue로 표시
+        if freeze_dt is not None and dt >= freeze_dt and cat == 'green':
+            cat = 'blue'
         binned[bin_key][cat] += 1
 
     if not times:
@@ -121,6 +124,7 @@ def main():
     parser.add_argument('in_path', nargs='?', default='status.jsonl')
     parser.add_argument('--start', help='공통 시작 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 14:00:00')
     parser.add_argument('--end', help='공통 종료 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 17:00:00')
+    parser.add_argument('--freeze', help='프리즈 시작 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 16:30:00')
     parser.add_argument('--minute', type=int, default=3, help='집계 간격(분)')
     parser.add_argument('--problems', help='생성할 문제 번호 목록(쉼표 구분, 예: A,B,C)', default='A,B,C,D,E,F,G,H,I,J,K,L,M,N,O')
     args = parser.parse_args()
@@ -163,9 +167,17 @@ def main():
     else:
         target_problems = list(grouped.keys())
 
+    # 프리즈타임 파싱
+    freeze_dt: Optional[datetime] = None
+    if args.freeze:
+        try:
+            freeze_dt = parse_datetime(args.freeze)
+        except Exception:
+            freeze_dt = None
+
     for problem_no in target_problems:
         records = grouped.get(problem_no, [])
-        binned, _start_unused, _end_unused = build_bins(records, minute_delta=minute_delta)
+        binned, _start_unused, _end_unused = build_bins(records, minute_delta=minute_delta, freeze_dt=freeze_dt)
         safe_name = problem_no.replace('/', '_')
         out_path = os.path.join('images', f'status_{safe_name}.png')
         plot_bins_to_file(binned, global_start, global_end, out_path)
