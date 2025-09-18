@@ -161,7 +161,7 @@ def crawl_status(start_url: str, output_jsonl: str = 'status.jsonl', max_pages: 
 
 if __name__ == "__main__":
     # 시작 URL
-    start_url = 'https://www.acmicpc.net/status?contest_id=1378'
+    start_url = 'https://www.acmicpc.net/status?contest_id=1379'
 
     # 테스트용: 현재 페이지를 캐시에 저장하고 전체 페이지를 순회하며 JSONL 작성
     # 캐시 파일명: cache/<주소.html> (URL 전체를 퍼센트 인코딩 후 .html 확장자)

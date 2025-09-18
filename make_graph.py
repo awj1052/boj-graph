@@ -58,7 +58,7 @@ def build_bins(records: List[Dict], minute_delta: int = 3, freeze_dt: Optional[d
         times.append(dt)
         bin_key = dt.replace(minute=(dt.minute // minute_delta) * minute_delta, second=0, microsecond=0)
         cat = classify_result(str(rec.get('result', '')))
-        if freeze_dt is not None and dt >= freeze_dt and cat == 'green':
+        if freeze_dt is not None and dt >= freeze_dt:
             cat = 'blue'
         binned[bin_key][cat] += 1
 
@@ -123,9 +123,9 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('in_path', nargs='?', default='status.jsonl')
-    parser.add_argument('--start', help='공통 시작 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 14:00:00')
-    parser.add_argument('--end', help='공통 종료 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 17:00:00')
-    parser.add_argument('--freeze', help='프리즈 시작 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 16:30:00')
+    parser.add_argument('--start', help='공통 시작 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 19:00:00')
+    parser.add_argument('--end', help='공통 종료 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 22:00:00')
+    parser.add_argument('--freeze', help='프리즈 시작 시간 YYYY-MM-DD HH:MM:SS', default='2024-09-28 21:30:00')
     parser.add_argument('--minute', type=int, default=3, help='집계 간격(분)')
     parser.add_argument('--problems', help='생성할 문제 번호 목록(쉼표 구분, 예: A,B,C)', default='A,B,C,D,E,F,G,H,I,J,K,L,M,N,O')
     args = parser.parse_args()
