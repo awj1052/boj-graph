@@ -1,5 +1,7 @@
 ## boj-graph
 
+<img width="1500" height="400" alt="status_A" src="https://github.com/user-attachments/assets/a8a5a2dd-b24d-45b7-9aa0-d2b749273c01" />
+
 백준 온라인 저지(BOJ) 대회용 상태 페이지를 크롤링해 시간대별 제출 결과를 시각화하는 작은 도구 모음입니다.
 
 - 대회 상태 페이지(예: `https://www.acmicpc.net/status?contest_id=XXXX`)를 수집해 `status.jsonl`로 저장
