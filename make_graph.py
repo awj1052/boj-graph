@@ -16,13 +16,17 @@ def parse_datetime(dt_str: str) -> datetime:
 
 
 def classify_result(result_text: str) -> str:
+    # green: 맞았습니다!!
+    # red: 틀렸습니다 (#dd4124)
+    # orange: 메모리/출력 초과, 출력 형식 오류, 시간 초과 (#fa7268)
+    # dark_grey: 런타임 에러 및 기타 (#0f4c81)
     if result_text == '맞았습니다!!':
         return 'green'
-    if result_text in ('틀렸습니다', '출력 형식이 잘못되었습니다'):
+    if result_text == '틀렸습니다':
         return 'red'
-    if result_text == '시간 초과':
+    if result_text in ('메모리 초과', '출력 초과', '출력 형식이 잘못되었습니다', '시간 초과'):
         return 'orange'
-    if result_text in ('메모리 초과', '출력 초과', '런타임 에러', '컴파일 에러'):
+    if result_text == '런타임 에러':
         return 'dark_grey'
     return 'dark_grey'
 
@@ -54,7 +58,6 @@ def build_bins(records: List[Dict], minute_delta: int = 3, freeze_dt: Optional[d
         times.append(dt)
         bin_key = dt.replace(minute=(dt.minute // minute_delta) * minute_delta, second=0, microsecond=0)
         cat = classify_result(str(rec.get('result', '')))
-        # 프리즈타임 이후의 맞았습니다!!는 blue로 표시
         if freeze_dt is not None and dt >= freeze_dt and cat == 'green':
             cat = 'blue'
         binned[bin_key][cat] += 1
@@ -89,12 +92,12 @@ def plot_bins_to_file(binned_data: Dict[datetime, Dict[str, int]], start_time: d
         if counts['green'] > 0:
             ax.bar(time_bin, counts['green'], color='lime', width=bar_width, align='edge')
         if counts['red'] > 0:
-            ax.bar(time_bin, -counts['red'], color='red', width=bar_width, align='edge')
+            ax.bar(time_bin, -counts['red'], color='#dd4124', width=bar_width, align='edge')
         if counts['orange'] > 0:
-            ax.bar(time_bin, -counts['orange'], bottom=-counts['red'], color='orange', width=bar_width, align='edge')
+            ax.bar(time_bin, -counts['orange'], bottom=-counts['red'], color='#fa7268', width=bar_width, align='edge')
         if counts['dark_grey'] > 0:
             bottom_position = -(counts['red'] + counts['orange'])
-            ax.bar(time_bin, -counts['dark_grey'], bottom=bottom_position, color='dimgrey', width=bar_width, align='edge')
+            ax.bar(time_bin, -counts['dark_grey'], bottom=bottom_position, color='#0f4c81', width=bar_width, align='edge')
 
     ax.axhline(0, color='grey', linewidth=2.5)
     ax.set_ylim(-(max_negative_count + 1), max_positive_count + 1)
@@ -106,10 +109,8 @@ def plot_bins_to_file(binned_data: Dict[datetime, Dict[str, int]], start_time: d
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
 
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
+    for spine in ('top', 'right', 'left', 'bottom'):
+        ax.spines[spine].set_visible(False)
 
     plt.tight_layout()
     fig.patch.set_alpha(0.0)
@@ -136,7 +137,6 @@ def main():
 
     all_records = read_status_jsonl(in_path)
 
-    # 전역 시간 범위 계산
     all_times: List[datetime] = []
     for rec in all_records:
         try:
@@ -161,13 +161,11 @@ def main():
             continue
         grouped[prob].append(rec)
 
-    # 대상 문제 목록 결정: 지정된 경우 그것만, 아니면 데이터에 존재하는 문제 전부
     if args.problems:
         target_problems = [p.strip() for p in args.problems.split(',') if p.strip()]
     else:
         target_problems = list(grouped.keys())
 
-    # 프리즈타임 파싱
     freeze_dt: Optional[datetime] = None
     if args.freeze:
         try:
@@ -177,7 +175,7 @@ def main():
 
     for problem_no in target_problems:
         records = grouped.get(problem_no, [])
-        binned, _start_unused, _end_unused = build_bins(records, minute_delta=minute_delta, freeze_dt=freeze_dt)
+        binned, _s, _e = build_bins(records, minute_delta=minute_delta, freeze_dt=freeze_dt)
         safe_name = problem_no.replace('/', '_')
         out_path = os.path.join('images', f'status_{safe_name}.png')
         plot_bins_to_file(binned, global_start, global_end, out_path)
