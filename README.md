@@ -1,6 +1,6 @@
 ## boj-graph
 
-<img width="1500" height="400" alt="status_A" src="https://github.com/user-attachments/assets/a8a5a2dd-b24d-45b7-9aa0-d2b749273c01" />
+<img width="1500" height="400" alt="status_C" src="https://github.com/user-attachments/assets/28ad9cc1-afb9-461f-891a-43ad8f0e9314" />
 
 백준 온라인 저지(BOJ) 대회용 상태 페이지를 크롤링해 시간대별 제출 결과를 시각화하는 작은 도구 모음입니다.
 
