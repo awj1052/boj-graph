@@ -2,87 +2,190 @@
 
 <img width="1500" height="400" alt="status_C" src="https://github.com/user-attachments/assets/28ad9cc1-afb9-461f-891a-43ad8f0e9314" />
 
-백준 온라인 저지(BOJ) 대회용 상태 페이지를 크롤링해 시간대별 제출 결과를 시각화하는 작은 도구 모음입니다.
+백준 온라인 저지(BOJ) 대회용 상태 페이지를 크롤링해 시간대별 제출 결과를 시각화하는 도구입니다.
 
-- 대회 상태 페이지(예: `https://www.acmicpc.net/status?contest_id=XXXX`)를 수집해 `status.jsonl`로 저장
+- 대회 상태 페이지를 수집해 `status.jsonl`로 저장
 - 선택적으로 `status.csv`로 변환
-- 문제별(예: A, B, C, ...) 시간 구간(기본 3분) 막대 그래프 이미지를 `images/status_*.png`로 생성
-- 프리즈 구간 이후의 정답은 파란색(blue)으로 표시해 공개/프리즈 이후 결과를 구분
-
-### 예시 산출물
-- `images/status_A.png`, `images/status_B.png`, ... 가 생성됩니다. 저장된 샘플 이미지를 참고하세요.
-
+- 문제별 시간 구간 막대 그래프 이미지를 `images/status_*.png`로 생성
+- 프리즈 구간 이후의 제출은 파란색으로 표시
 
 ## 기술 스택
-- Python 3.9+ (권장 3.10+)
-- Requests: 웹 요청
-- BeautifulSoup4: HTML 파싱
-- python-dotenv: `.env`에서 BOJ 쿠키 로드
-- matplotlib: 그래프 생성
-- 표준 라이브러리: `dataclasses`, `json`, `csv`, `datetime`, `collections`, `typing`
 
-설치 예시:
+- Python 3.9+
+- Requests, BeautifulSoup4, python-dotenv, matplotlib, PyQt5
+
 ```bash
-pip install requests beautifulsoup4 python-dotenv matplotlib
+pip install -r requirements.txt
 ```
 
+## 프로젝트 구조
 
-## 설치 및 준비
-1) 저장소 클론
-```bash
-git clone <this-repo>
-cd boj-graph
+```
+boj-graph/
+├── domain/              # 도메인 모델
+│   └── models.py        # Submission, BinData
+├── services/            # 비즈니스 로직
+│   ├── crawler.py       # 크롤링 (Strategy 패턴)
+│   ├── graph_builder.py # 그래프 생성 (Builder 패턴)
+│   └── converter.py     # JSONL→CSV 변환
+├── gui/                 # PyQt5 GUI
+│   ├── main_window.py
+│   └── widgets.py
+├── cli/                 # CLI 진입점
+│   ├── crawl.py
+│   ├── graph.py
+│   └── convert.py
+└── main.py              # GUI 실행
 ```
 
-2) Python 의존성 설치
-```bash
-pip install -r requirements.txt  # 파일이 없다면 아래 명령으로 대체
-pip install requests beautifulsoup4 python-dotenv matplotlib
-```
+## 설정
 
-3) 로그인 쿠키 준비(.env)
-- BOJ에 로그인한 뒤 브라우저 개발자 도구에서 `bojautologin` 쿠키 값을 확인합니다.
-- 루트 디렉터리에 `.env` 파일을 만들어 다음과 같이 저장합니다:
+### BOJ 쿠키 설정
+
+`.env` 파일 생성:
+
 ```env
-BOJ_AUTO_LOGIN=여기에_bojautologin_쿠키값
+BOJ_AUTO_LOGIN=your_bojautologin_cookie_value
 ```
 
-주의: 일부 대회의 상태 페이지는 로그인/권한이 필요합니다. 쿠키가 없거나 권한이 없으면 수집 결과가 비어 있거나 403이 발생할 수 있습니다.
-
+BOJ에 로그인 후 브라우저 개발자 도구에서 `bojautologin` 쿠키 값을 확인하세요.
 
 ## 사용 방법
-### 1) 대회 상태 수집(JSONL 생성)
-기본 예시(스크립트에 내장된 URL 사용):
-```bash
-python scrapping.py
-```
-- 기본 시작 URL: `https://www.acmicpc.net/status?contest_id=1378`
-- 결과: `status.jsonl` 생성, 원본 HTML은 `cache/`에 저장(중복 요청 방지)
 
-다른 대회를 수집하려면(파워셸/리눅스 공통 한 줄 예시):
-```bash
-python -c "from scrapping import crawl_status; crawl_status('https://www.acmicpc.net/status?contest_id=XXXX', output_jsonl='status.jsonl', max_pages=None, use_cache=True)"
-```
-- `max_pages`로 페이지 수를 제한할 수 있습니다(기본 무제한).
+### GUI 실행
 
-### 2) JSONL → CSV (선택)
 ```bash
-python jsonl_to_csv.py status.jsonl --out status.csv
+python main.py
 ```
-- 컬럼 선택 예시: `--fields submission_id,user_id,problem_no,result,submitted_at`
-- 구분자 변경: `--delimiter ';'`
 
-### 3) 그래프 생성
+또는
+
 ```bash
-python make_graph.py status.jsonl \
-  --start "2024-09-28 14:00:00" \
-  --end   "2024-09-28 17:00:00" \
-  --freeze "2024-09-28 16:30:00" \
+python boj_gui.py
+```
+
+GUI는 4개 탭으로 구성:
+- **크롤링**: 대회 상태 페이지 수집
+- **그래프 생성**: 문제별 시각화
+- **CSV 변환**: JSONL을 CSV로 변환
+- **이미지 뷰어**: 생성된 그래프 확인
+
+### CLI 사용
+
+#### 1. 크롤링
+
+```bash
+python cli/crawl.py https://www.acmicpc.net/status?contest_id=1379
+```
+
+옵션:
+- `-o, --output`: 출력 파일 경로 (기본: status.jsonl)
+- `-c, --cookie`: BOJ_AUTO_LOGIN 쿠키 값
+- `-m, --max-pages`: 최대 페이지 수
+- `--no-cache`: 캐시 사용 안 함
+
+#### 2. 그래프 생성
+
+```bash
+python cli/graph.py status.jsonl \
+  --start "2024-09-28 19:00:00" \
+  --end "2024-09-28 22:00:00" \
+  --freeze "2024-09-28 21:30:00" \
   --minute 3 \
   --problems A,B,C,D,E,F,G,H,I,J,K,L,M,N,O
 ```
-- `--start`, `--end`: 공통 x축 구간 지정(미지정 시 데이터로부터 추정)
-- `--freeze`: 프리즈 시작 시각. 이후 정답은 파란색(blue)으로 표기
-- `--minute`: 집계 간격(분)
-- `--problems`: 이미지 생성할 문제 목록(쉼표 구분)
-- 출력: `images/status_<문제>.png`
+
+옵션:
+- `--start`: 시작 시간
+- `--end`: 종료 시간
+- `--freeze`: 프리즈 시작 시간
+- `--minute`: 집계 간격 (분)
+- `--problems`: 문제 목록 (쉼표 구분)
+- `-o, --output-dir`: 출력 디렉터리 (기본: images)
+
+#### 3. CSV 변환
+
+```bash
+python cli/convert.py status.jsonl -o status.csv
+```
+
+옵션:
+- `-o, --output`: 출력 파일
+- `--fields`: 포함할 필드 (쉼표 구분)
+- `-d, --delimiter`: CSV 구분자
+
+### 레거시 API (하위 호환)
+
+기존 스크립트도 그대로 사용 가능:
+
+```bash
+python scrapping.py
+python make_graph.py status.jsonl --start "2024-09-28 19:00:00" --end "2024-09-28 22:00:00"
+python jsonl_to_csv.py status.jsonl --out status.csv
+```
+
+## 디자인 패턴
+
+### Strategy 패턴
+크롤링 시 캐시 전략을 런타임에 선택 가능:
+- `FileCacheStrategy`: 파일 기반 캐싱
+- `NoCacheStrategy`: 캐시 사용 안 함
+
+### Builder 패턴
+그래프 생성 시 복잡한 설정을 체이닝으로 구성:
+
+```python
+GraphBuilder() \
+    .with_submissions(submissions) \
+    .with_time_range(start, end) \
+    .with_freeze_time(freeze) \
+    .with_minute_delta(3) \
+    .with_output_path('graph.png') \
+    .build()
+```
+
+### Factory 패턴
+객체 생성을 팩토리로 캡슐화:
+
+```python
+crawler = CrawlerFactory.create(bojautologin, use_cache=True)
+converter = ConverterFactory.create_jsonl_to_csv(input, output)
+```
+
+### Repository 패턴
+데이터 접근 로직 추상화:
+
+```python
+submissions = SubmissionRepository.load_from_jsonl('status.jsonl')
+grouped = SubmissionRepository.group_by_problem(submissions)
+```
+
+## 프로그래밍 방식 사용
+
+```python
+from services import CrawlerFactory, GraphBuilder, SubmissionRepository
+
+crawler = CrawlerFactory.create(bojautologin='your_cookie')
+crawler.crawl('https://www.acmicpc.net/status?contest_id=1379', 'status.jsonl')
+
+submissions = SubmissionRepository.load_from_jsonl('status.jsonl')
+grouped = SubmissionRepository.group_by_problem(submissions)
+
+for problem_no, problem_submissions in grouped.items():
+    GraphBuilder() \
+        .with_submissions(problem_submissions) \
+        .with_time_range('2024-09-28 19:00:00', '2024-09-28 22:00:00') \
+        .with_freeze_time('2024-09-28 21:30:00') \
+        .with_output_path(f'images/status_{problem_no}.png') \
+        .build()
+```
+
+## 주의사항
+
+- 일부 대회 페이지는 로그인/권한이 필요합니다
+- 쿠키가 없거나 권한이 없으면 403 또는 빈 결과가 발생할 수 있습니다
+- 캐시는 `cache/` 디렉터리에 저장됩니다
+
+## 라이선스
+
+MIT
