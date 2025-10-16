@@ -114,14 +114,16 @@ python cli/convert.py status.jsonl -o status.csv
 - `--fields`: 포함할 필드 (쉼표 구분)
 - `-d, --delimiter`: CSV 구분자
 
-### 레거시 API (하위 호환)
+## 아키텍처
 
-기존 스크립트도 그대로 사용 가능:
+### 계층 구조
+- **Domain Layer**: 비즈니스 엔티티 및 규칙
+- **Service Layer**: 비즈니스 로직 및 조정
+- **Presentation Layer**: GUI 및 CLI 인터페이스
 
-```bash
-python scrapping.py
-python make_graph.py status.jsonl --start "2024-09-28 19:00:00" --end "2024-09-28 22:00:00"
-python jsonl_to_csv.py status.jsonl --out status.csv
+### 의존성 방향
+```
+GUI/CLI → Services → Domain
 ```
 
 ## 디자인 패턴
