@@ -1,4 +1,7 @@
+.idea/
 .env
 cache/
 images/
+dist/
+build/
 __pycache__/

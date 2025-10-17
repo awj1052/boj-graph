@@ -207,6 +207,19 @@ converter = ConverterFactory.create_jsonl_to_csv(
 converter.convert()
 ```
 
+## EXE 빌드
+
+독립 실행 파일로 만들어 Python 설치 없이 사용할 수 있습니다.
+
+```bash
+pip install pyinstaller
+pyinstaller boj_graph.spec
+```
+
+생성된 파일: `dist/BOJ-Graph.exe`
+
+자세한 내용은 [BUILD.md](BUILD.md)를 참조하세요.
+
 ## 주의사항
 
 - 일부 대회 페이지는 로그인/권한이 필요합니다
