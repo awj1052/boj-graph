@@ -58,12 +58,6 @@ BOJ에 로그인 후 브라우저 개발자 도구에서 `bojautologin` 쿠키 �
 python main.py
 ```
 
-또는
-
-```bash
-python boj_gui.py
-```
-
 GUI는 4개 탭으로 구성:
 - **크롤링**: 대회 상태 페이지 수집
 - **그래프 생성**: 문제별 시각화
@@ -164,11 +158,27 @@ grouped = SubmissionRepository.group_by_problem(submissions)
 
 ## 프로그래밍 방식 사용
 
-```python
-from services import CrawlerFactory, GraphBuilder, SubmissionRepository
+### 크롤링 예제
 
-crawler = CrawlerFactory.create(bojautologin='your_cookie')
-crawler.crawl('https://www.acmicpc.net/status?contest_id=1379', 'status.jsonl')
+```python
+from services import CrawlerFactory
+
+crawler = CrawlerFactory.create(bojautologin='your_cookie', use_cache=True)
+crawler.set_progress_callback(lambda msg: print(msg))
+crawler.crawl(
+    start_url='https://www.acmicpc.net/status?contest_id=1379',
+    output_path='status.jsonl',
+    max_pages=None
+)
+```
+
+### 그래프 생성 예제
+
+```python
+from services import GraphBuilder, SubmissionRepository
+import os
+
+os.makedirs('images', exist_ok=True)
 
 submissions = SubmissionRepository.load_from_jsonl('status.jsonl')
 grouped = SubmissionRepository.group_by_problem(submissions)
@@ -178,8 +188,23 @@ for problem_no, problem_submissions in grouped.items():
         .with_submissions(problem_submissions) \
         .with_time_range('2024-09-28 19:00:00', '2024-09-28 22:00:00') \
         .with_freeze_time('2024-09-28 21:30:00') \
+        .with_minute_delta(3) \
         .with_output_path(f'images/status_{problem_no}.png') \
         .build()
+```
+
+### CSV 변환 예제
+
+```python
+from services import ConverterFactory
+
+converter = ConverterFactory.create_jsonl_to_csv(
+    input_path='status.jsonl',
+    output_path='status.csv',
+    fields=['submission_id', 'user_id', 'problem_no', 'result', 'submitted_at'],
+    delimiter=','
+)
+converter.convert()
 ```
 
 ## 주의사항
